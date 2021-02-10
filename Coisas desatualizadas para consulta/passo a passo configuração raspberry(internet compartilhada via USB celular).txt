@@ -1,0 +1,298 @@
+﻿*Explicações
+
+*Neste exemplo o rasp ira receber internet pela USB, via 3G/4G roteado por um telefone celular.
+A rede cabeada irá estar conectada a antena wifi 5Ghz (que está se comunicando com o barco)
+Ja a placa WIFI onboard do rasp distribui sinal, para que os clientes acessem a rede, 
+e visualizem a aplicação do barco.
+
+* Nome da rede Wifi - SOLARIS-AP
+  Senha - abcde12345
+  Ip do servidor (Raspberry) - 192.168.5.1
+  Faixa de IP disponibilizada pelo raspberry aos usuarios conectados- 192.168.5.10 / 192.168.5.20
+
+*sudo -i (faça todo o processo como usuario root, por via das duvidas)
+
+1 - INSTALANDO OS PACOTES NECESSÁRIOS
+
+*ANTES DE PROSSEGUIR ATUALIZE O RASPBIAN
+(sudo apt-get update) *quando solicitado confirme com Y ou S
+Feito isso, reinicie (sudo reboot)
+
+*******Conecte o raspberry a internet*****
+*******PACOTES A SEREM INSTALADOS*****
+
+hostapd
+Permite utilizar o chip Wifi (ou adaptador usb), como AP
+
+dnsmasq
+Combinação de servidor DHCP e DNS 
+
+1.1 - Abra o terminal e instale os pacotes que serão utilizados 
+(sudo apt-get install dnsmasq hostapd) *quando solicitado confirme com Y ou S
+
+1.2 - Antes de prosseguir, pare os serviços
+hostapd (sudo systemctl stop hostapd)
+dnsmasq (sudo systemctl stop dnsmasq)
+
+2 - CONFIGURANDO IP ESTATICO PARA WLAN(wlan0) e ETH(eth0)
+*Este será o IP do servidor, que será utilizado para fazer o acesso a aplicação do barco solaris pelos usuários.
+
+* wlan0 e eth0 se referem aos chips internos do raspberryPi, caso utilize
+um adaptador USB/wifi ou USB/ethernet, wlan e eth podem variar entre wlan1,2  eth1,2...
+
+* Caso esteja conectado a internet via Wifi do raspberry, desconecte 
+e conecte a internet via cabo de rede
+
+* o IP 192.168.5.1, pode ser definido como for necessário, 10.0.0.1, 192.168.0.1, etc, cuidado com conflito de IP com a conexão eth0 (rede cabeada)
+
+2.1 - Abra o arquivo dhcpcd.conf (sudo nano /etc/dhcpcd.conf), navegue até a ultima linha e insira o seguinte:
+	
+	interface wlan0
+	static ip_address=192.168.5.1/24
+	nohook wpa_supplicant
+	static routers= 192.168.5.1
+	static domain_name_servers=127.0.0.1
+	static domain_search=
+
+	interface eth0
+	static ip_address=192.168.0.252/24
+	static routers=192.168.0.1
+	static domain_name_servers=8.8.8.8
+	static domain_search=
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+2.2 - Feito isso reinicie o serviço dhcpcd (sudo service dhcpcd restart)
+	  * caso feito corretamente, o ip da wlan0 deve ser agora 192.168.5.1/24
+	  * /24 se refere a mascara de rede 255.255.255.0
+
+3 - EDITANDO O ARQUIVO HOSTS
+
+* O arquivo hosts irá possibilitar ao usuário acessar no navegador o endereço www.iffsolaris.net, ao
+invés do IP 192.168.5.1
+
+3.1 - Abra o arquivo hosts (sudo nano /etc/hosts), e edite da seguinte forma:
+
+192.168.5.1     www.iffsolaris.net
+192.168.5.1     iffsolaris.net
+192.168.0.1     www.iffsolaris.net
+192.168.0.1     iffsolaris.net
+127.0.0.1      	localhost
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+127.0.1.1       localhost
+127.0.1.1       raspberrypi
+
+
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+3 - CONFIGURANDO O DNSMASQ (SERVIDOR DHCP, E DE NOMES)
+
+3.1 - Faça o backup do arquivo de configuração original (sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig)
+
+3.2 - Crie um novo arquivo de configuração dnsmasq (sudo nano /etc/dnsmasq.conf), insira o seguinte:
+
+interface=wlan0 #informa ao dnsmasq que ele deve operar na conexão wlan
+
+interface=eth0 #informa ao dnsmasq que ele deve operar na conexão eth
+
+interface=usb0 #informa ao dnsmasq que ele deve operar na conexão usb
+
+#Define a faixa de ip liberado pelo dhcp, a mascara de sub rede e o tempo de emprestimo do ip ao usuario
+dhcp-range=192.168.5.10,192.168.5.100,255.255.255.0,24h 
+
+listen-address=127.0.0.1 #Faz o próprio dnsmasq utilizar o próprio cache, ao invés de encaminhar para um servidor DNS.
+
+cache-size=1000 #Define o tamanho do cache dns em Kbs
+
+local=/net/ #Pesquisas para o domínio “net” não serão encaminhadas para os servidores listados em “server=…”.
+
+expand-hosts #Adiciona automaticamente o domínio (net) em nomes de máquinas simples. Exemplo desk01 será completado com desk01.net
+
+domain=net #Procura neste domínio por nome de máquinas simples (hostname).
+
+address=/iffsolaris.net/127.0.0.1 #Encaminha o acesso solicitado pelo usuário para um servidor local
+
+address=/www.iffsolaris.net/127.0.0.1 #Encaminha o acesso solicitado pelo usuário para um servidor local
+
+no-resolv #Bloqueia o dnsmasq de pesquisar no arquivo resolv.conf
+
+no-poll   #Bloqueia o dnsmasq de pesquisar no arquivo poll.conf
+
+server=8.8.8.8 #Servidor DNS consultado caso o cache local não conheça o domínio solicitado. Para cadastrar outro servidor basta adicionar outra linha.
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+3.3 - Reinicie o DNSMASQ para aplicar as alterações (sudo /etc/init.d/dnsmasq restart)
+*caso seja exibida uma mensagem de erro após o comando, verifique o arquivo dnsmasq.conf por alguma palavra escrita errada*
+4 - CONFIGURANDO O HOSTAPD
+
+4.1 - Crie um novo arquivo de configuração hostapd (sudo nano /etc/hostapd/hostapd.conf) e insira o seguinte:
+#Copie da mesma forma que está descrito, não substitua letras maiusculas por minusculas,
+ou vice-versa, pois poderá ocasionar em erro.
+
+#Tudo que estiver precedido por # são apenas linhas de comentário, copiar ou não é opcional (inclusive isso aqui ;D)
+
+#Define o nome do adaptador wlan que será utilizado
+interface=wlan0
+
+driver=nl80211
+
+#Define o nome da rede wifi
+ssid=SOLARIS_AP
+
+#Define que o wifi vai operar em modo 2.4ghz
+hw_mode=g
+
+#Define o canal a ser utilizado pelo wifi(pode ser entre 1 e 11)
+channel=6
+
+#Habilita 802.11n
+ieee80211n=1
+
+wmm_enabled=1
+
+#Define conexão liberada a qualquer endereço MAC
+macaddr_acl=0
+
+#Define o tipo de autenticação de segurança como WPA
+auth_algs=1
+
+ignore_broadcast_ssid=0
+
+#Define o padrão de segurança WPA2
+wpa=2
+
+#Define a senha da rede WiFi
+wpa_passphrase=abcde12345
+
+#Define a chave de segurança como WPA-PSK
+wpa_key_mgmt=WPA-PSK
+
+#Use AES, instead of TKIP
+wpa_pairwise=TKIP
+
+rsn_pairwise=CCMP
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+4.2 - Abra o arquivo hostapd (sudo nano /etc/default/hostapd), encontre a seguinte linha:
+
+	#DAEMON_CONF=""
+
+e substitua pelo seguinte:
+
+	DAEMON_CONF="/etc/hostapd/hostapd.conf"
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+Dessa forma o sistema irá carregar as configurações do arquivo hostpad.conf durante o boot e iniciar o Acess Point
+
+4.3 - Habilite e inicie o serviço HOSTAPD com as novas onfigurações
+		
+		sudo systemctl unmask hostapd
+		sudo systemctl enable hostapd
+		sudo systemctl start hostapd 
+
+5 - CONFIGURANDO O ENCAMINHAMENTO DE PACOTES VIA IPV4 E MASQUERADING VIA ETH0 E USB0
+
+5.1 - Abra o arquivo sysctl.conf (sudo nano /etc/sysctl.conf), encontre a seguinte linha
+
+	#net.ipv4.ip_forward=1
+
+e subtitua pelo seguinte
+
+	net.ipv4.ip_forward=1
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+5.2 - Com o terminal aberto, adicione as seguintes regras no iptables:
+
+sudo iptables -t nat -A  POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -t nat -A  POSTROUTING -o usb0 -j MASQUERADE
+sudo iptables -A FORWARD -i usb0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+sudo iptables -A FORWARD -i wlan0 -o usb0 -j ACCEPT
+# 'REDIRECIONANDO ENDEREÇO E PORTA DA APLICAÇÃO'
+sudo iptables -t nat -I PREROUTING -p tcp -s 192.168.5.0/24 -d 192.168.5.1 -j DNAT --to-destination 192.168.5.1:8088
+# 'LIBERANDO PORTA VNC'
+sudo iptables -t nat -I PREROUTING -p tcp --dport 5900 -j ACCEPT
+# 'BLOQUEANDO ACESSO A HTTPS E HTTP PELA REDE WIFI'
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 80  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 443 -j DROP
+# 'BLOQUEANDO PORTAS WHATSAPP'
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 4244  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5222  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5223  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5228  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5242  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 50318  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 59234  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 3478  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 45395  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 50318  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 59234  -j DROP
+
+5.3 - Salve as regras do iptables no arquivo /etc/iptables.ipv4.nat (sudo sh -c "iptables-save > /etc/iptables.ipv4.nat")
+
+5.4 - Edite o arquivo /etc/rc.local para iniciar as regras do iptables no boot 
+
+5.4.1 - abra o arquivo /etc/rc.local (sudo nano /etc/rc.local), e logo acima da linha com o texto "exit 0", adicione o seguinte: iptables-restore < /etc/iptables.ipv4.nat
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+Reinicie o Raspberry (sudo reboot)
+Após o raspberry reiniciar, ja é possí­vel se conectar a rede SOLARIS_AP, com a senha abcde12345
+
+6 - PERMITIR O ACESSO A INTERNET PELA REDE WIFI APENAS PARA SITES ESSENCIAIS A APLICAÇÃO
+
+6.1 - No terminal, adicione as seguintes regras no IPTABLES
+
+#Caso nao esteja como usuario root
+sudo -i
+
+iptables -I FORWARD -i wlan0 -p tcp --dport 443 -j DROP (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d server.arcgisonline.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d use.fontawesome.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d maxcdn.bootstrapcdn.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d ajax.googleapis.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d cdnjs.cloudflare.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+iptables -I FORWARD -i wlan0 -d unpkg.com -p tcp --dport 443 -j ACCEPT (pressione ENTER)
+
+sudo sh -c "iptables-save > /etc/iptables.ipv4.nat" (pressione ENTER)
+
+6.2 - Reinicie o sistema (sudo reboot)
+
+7 - CONFIGURANDO OS SCRIPTS AUXILIARES
+
+#Explicando para que serve cada script
+
+*runserver.sh
+*Inicia o servidor django e por consequencia a aplicação, durante o boot
+
+*botao_desligar_pi.py
+*É acionado ao pressionar o botão, e desliga o raspberry
+
+*botao_renovar_iptables.py
+*É acionado ao pressionar o botão, reseta as configurações do iptables. O que resolve o problema de lentidão e mau funcionamento da aplicação
+
+*renovar_iptables_auto.py
+*Reseta as configurações do iptables automaticamente a cada 2 minutos. O que resolve o problema de lentidão e mau funcionamento da aplicação
+
+7.1 - Copie a pasta script para  /home/pi/Documents/scripts/
+
+7.2 - Abra o arquivo rc.local (sudo nano /etc/rc.local)
+
+7.3 - Vá até o final do arquivo, entre as linhas "exit 0" e "iptables-restore < /etc/iptables.ipv4.nat&",  e adicione as seguintes linhas para configurar o carregamento dos scripts durante o boot:
+
+home/pi/Documents/scripts/runserver.sh&
+
+python3 /home/pi/Documents/scripts/botao_desligar_pi.py&
+
+python3 /home/pi/Documents/scripts/botao_renovar_iptables.py&
+
+python 3 /home/pi/Documents/scripts/renovar_iptables_auto.py&

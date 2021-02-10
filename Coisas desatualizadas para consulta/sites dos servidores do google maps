@@ -1,0 +1,11 @@
+iptables -I FORWARD -i wlan0 -p tcp --dport 443 -j DROP *testar bloquear todas as portas
+
+iptables -I FORWARD -i wlan0 -d mt0.google.com -p tcp --dport 443 -j ACCEPT
+
+iptables -I FORWARD -i wlan0 -d mt1.google.com -p tcp --dport 443 -j ACCEPT
+
+iptables -I FORWARD -i wlan0 -d mt2.google.com -p tcp --dport 443 -j ACCEPT
+
+iptables -I FORWARD -i wlan0 -d mt3.google.com -p tcp --dport 443 -j ACCEPT
+
+iptables -I FORWARD -i wlan0 -d mt4.google.com -p tcp --dport 443 -j ACCEPT

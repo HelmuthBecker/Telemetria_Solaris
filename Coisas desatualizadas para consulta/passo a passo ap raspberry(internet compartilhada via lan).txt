@@ -1,0 +1,191 @@
+*Explica��es
+
+*Neste exemplo, a porta LAN do raspberry está configurada para receber internet
+via DHCP, de algum roteador. Ja a placa WIFI, distribui sinal, para que os clientes
+acessem a rede, e visualizem a aplicação do barco.
+
+* Nome da rede Wifi - SOLARIS-AP
+  Senha - abcde12345
+  Ip do servidor (Raspberry) - 192.168.5.1
+  Faixa de IP disponibilizada pelo raspberry aos usuarios conectados- 192.168.5.10 / 192.168.5.20
+
+*sudo -i (faça todo o processo como usuario root, por via das duvidas)
+
+*ANTES DE PROSSEGUIR ATUALIZE O RASPBIAN
+(sudo apt-get update) *quando solicitado confirme com Y ou S
+
+1 - INSTALANDO OS PACOTES NECESSÁRIOS
+
+*******Conecte o raspberry a internet*****
+
+hostapd
+Permite utilizar o chip Wifi (ou adaptador usb), como AP
+
+dnsmasq
+Combinação de servidor DHCP e DNS 
+
+1.1 - Abra o terminal e instale os pacotes que serão utilizados 
+(sudo apt-get install dnsmasq hostapd) *quando solicitado confirme com Y ou S
+
+1.2 - Antes de prosseguir, pare os serviços
+hostapd (sudo service hostapd stop)
+dnsmasq (sudo service dnsmasq stop)
+
+2 - CONFIGURANDO IP ESTATICO PARA WLAN(wlan0)
+*Este será o IP do servidor, que será utilizado para fazer o acesso a aplicação do barco solaris.
+
+* wlan0 se refere ao chip interno do raspberryPi, caso utilize
+um adaptador USB/wifi, wlan pode variar entre wlan1,2...
+
+* Caso esteja conectado a internet, via Wifi do raspberry, desconecte 
+e conecte a internet via cabo de rede
+
+* o IP 192.168.5.1, pode ser definido como for necessário, 10.0.0.1, 192.168.0.1, etc...
+
+2.1 - Abra o arquivo dhcpcd.conf (sudo nano /etc/dhcpcd.conf), navegue até a ultima linha e insira o seguinte:
+	
+	interface wlan0
+	inform 192.168.5.1
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+2.2 - Feito isso reinicie o serviço dhcpcd (sudo service dhcpcd restart)
+
+3 - CONFIGURANDO O HOSTAPD
+
+3.1 - Crie um novo arquivo de configuração hostapd (sudo nano /etc/hostapd/hostapd.conf) e insira o seguinte:
+#Copie da mesma forma que está descrito, não substitua letras maiusculas por minusculas,
+ou vice-versa, pois poderá ocasionar em erro.
+
+#Tudo que estiver precedido por # são apenas linhas de comentário, copiar ou não é opcional (inclusive isso aqui ;D)
+
+#Define o nome do adaptador wlan que será utilizado
+interface=wlan0
+
+driver=nl80211
+
+#Define o nome da rede wifi
+ssid=SOLARIS_AP
+
+#Define que o wifi vai operar em modo 2.4ghz
+hw_mode=g
+
+#Define o canal a ser utilizado pel wifi(pode ser entre 1 e 11)
+channel=6
+
+#Habilita 802.11n
+ieee80211n=1
+
+wmm_enabled=1
+
+#n�o utilize espa�os entre os []
+ht_capab=[HT40][SHORT-GI-20][DSSS_CCK-40]
+
+#Define conexão liberada a qualquer endereço MAC
+macaddr_acl=0
+
+#Define o tipo de autenticação de segurança como WPA
+auth_algs=1
+
+ignore_broadcast_ssid=0
+
+#Define o padrão de segurança WPA2
+wpa=2
+
+#Define a chave de segurança como WPA-PSK
+wpa_key_mgmt=WPA-PSK
+
+#Define a senha da rede WiFi
+wpa_passphrase=abcde12345
+
+#Use AES, instead of TKIṔ
+rsn_pairwise=CCMP
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+3.2 - Abra o arquivo hostapd (sudo nano /etc/default/hostapd), encontre a seguinte linha:
+
+	#DAEMON_CONF=""
+
+e substitua pelo seguinte:
+
+	DAEMON_CONF="/etc/hostapd/hostapd.conf"
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+Dessa forma o sistema irá carregar as configurações do arquivo hostpad.conf durante o boot e iniciar o Acess Point
+
+4 - CONFIGURANDO O DNSMASQ (SERVIDOR DHCP)
+
+4.1 - Faça o backup do arquivo de configuração original (sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig)
+
+4.2 - Crie um novo arquivo de configuração dnsmasq (sudo nano /etc/dnsmasq.conf), insira o seguinte:
+
+#Define o nome do adaptador wlan que será utilizado
+interface=wlan0
+
+#Define a faixa de IP que será distribuida, a mascara de subrede e 
+por quanto tempo o IP ficara atribuido ao dispositivo cliente
+dhcp-range=192.168.5.10,192.168.5.20,255.255.255.0,1h
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+5 - CONFIGURANDO O ENCAMINHAMENTO DE PACOTES VIA IPV4
+
+5.1 - Abra o arquivo sysctl.conf (sudo nano /etc/sysctl.conf), encontre a seguinte linha
+
+	#net.ipv4.ip_forward=1
+
+e subtitua pelo seguinte
+
+	net.ipv4.ip_forward=1
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+5.2 - Reinicie o sistema (sudo reboot)
+
+Após o raspberry reiniciar, já é possível se conectar a rede SOLARIS_AP, com a senha abcde12345
+
+6 - COMPARTILHANDO A INTERNET DA PORTA LAN PELO WIFI COM OS CLIENTES (CASO NECESSÁRIO)
+* Esta parte é opcional, pois para que o acesso a aplicação funcione, não é necessário
+compartilhar a internet da porta LAN com os clientes conectados ao AP wifi.
+basta apenas que eles tenham acesso a rede wifi gerada pelo AP.
+
+6.1 - No terminal, execute os seguintes comandos
+
+#Caso nao esteja como usuario root
+sudo -i
+
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE (pressione ENTER)
+
+sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT (pressione ENTER)
+
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT (pressione ENTER)
+
+sudo sh -c "iptables-save>/etc/iptables.ipv4.nat" (pressione ENTER)
+
+6.2 - Abra o arquivo rc.local (sudo nano /etc/rc.local), e insira o seguinte, 
+logo acima da linha onde esta escrito exit 0 :
+
+iptables-restore</etc/iptables.ipv4.nat
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+6.3 - Reinicie o sistema (sudo reboot)
+
+Após o raspberry reiniciar, é possível se conectar a internet, através da rede SOLARIS_AP, com a senha abcde12345
+
+6.4 - Caso queira desabilitar a opção de compartilhamento de internet entre a LAN  e a Wi-fi,
+abra o novamente o arquivo rc.local (sudo nano /etc/rc.local), encontre a seguinte linha: 
+
+iptables-restore</etc/iptables.ipv4.nat
+
+e substitua pelo seguinte
+
+#iptables-restore</etc/iptables.ipv4.nat
+
+pressione ctrl+x, y(yes), enter, para salvar e sair
+
+6.5 - Reinicie o sistema (sudo reboot)
+
+Após o reinicio, não será mais possível acessar a internet através do AP

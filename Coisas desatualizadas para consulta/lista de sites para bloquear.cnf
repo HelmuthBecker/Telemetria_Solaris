@@ -1,0 +1,30 @@
+*bloquear portas whatsapp*
+
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 80  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 4244  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5222  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5223  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5228  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 5242  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 50318  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p tcp --dport 59234  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 3478  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 45395  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 50318  -j DROP
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 59234  -j DROP
+
+*bloquear porta https*
+
+sudo iptables -I FORWARD -i wlan0 -p udp --dport 443  -j DROP
+
+*liberar sites da aplicação*
+
+iptables -I FORWARD -i wlan0 -d server.arcgisonline.com -p tcp --dport 443 -j ACCEPT
+iptables -I FORWARD -i wlan0 -d use.fontawesome.com -p tcp --dport 443 -j ACCEPT
+iptables -I FORWARD -i wlan0 -d maxcdn.bootstrapcdn.com -p tcp --dport 443 -j ACCEPT
+iptables -I FORWARD -i wlan0 -d ajax.googleapis.com -p tcp --dport 443 -j ACCEPT
+iptables -I FORWARD -i wlan0 -d cdnjs.cloudflare.com -p tcp --dport 443 -j ACCEPT
+iptables -I FORWARD -i wlan0 -d unpkg.com -p tcp --dport 443 -j ACCEPT
+
+*liberar porta vnc*
+sudo iptables -t nat -I PREROUTING -p tcp --dport 5900 -j ACCEPT

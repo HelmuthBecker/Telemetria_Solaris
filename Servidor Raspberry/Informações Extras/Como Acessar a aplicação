@@ -1,0 +1,23 @@
+#Tudo que for necessário para iniciar servidores e aplicações deve ser colocado em scripts,
+que deverão ser iniciados automaticamente durante o Boot
+
+1 - COMO SE CONECTAR AO WIFI DO RASP
+
+1.1 - Procure pelo WiFi SOLARIS_AP
+	senha: abcde12345
+
+2 - COMO ACESSAR O SITE DA APLICAÇÃO
+
+Estando conectado a rede WiFi SOLARIS_AP
+2.1 - No navegador acesse: www.iffsolaris.net/app
+2.2 - Faça login utilizando o usuario e senha
+
+3 - COMO ACESSAR VIA REAL VNC
+3.1 - No aplicativo do VNC acesse o ip do raspberry e utilize 
+	USUARIO: visitante
+	SENHA: 12345abcde
+		
+		ou
+
+	USUARIO: admin
+	SENHA: admin12345

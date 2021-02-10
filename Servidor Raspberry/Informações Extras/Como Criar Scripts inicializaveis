@@ -1,0 +1,38 @@
+﻿1 - COMO CRIAR UM SCRIPT E TORNALO INICIALIZAVEL NO BOOT
+
+
+1.1 - Abra o terminal e navegue até a pasta onde o arquivo criado será salvo (Desktop por exemplo)
+
+1.2 - Na janela do terminal digite: 
+      
+      sudo nano nomedoscript.sh
+
+1.3 - Na janela que se abrir insira o seguinte texto: 
+
+      !/bin/bash #cabeçalho obrigatorio em todo script
+      #insira os comandos do script daqui pra baixo
+      cd /home/pi/Desktop/app_solaris #informa ao sistema para navegar para pasta especificada
+      npm start #comando a ser executado
+
+1.4 - salve e feche o arquivo (ctrl + x / y)
+
+1.5 - Após fechar o arquivo "iniciar_NPM.sh", ainda com o terminal aberto 
+      e na mesma pasta do arquivo, insira o seguinte comando: 
+
+      sudo chmod +x iniciar_NPM.sh
+
+**Isto irá tornar o script um arquivo executavel
+
+#Edite o arquivo rc.local para indicar o arquivo criado a ser iniciado no boot
+
+1.6 - Abra o arquivo rc.local. Para isso insira o seguinte comando: 
+      
+      sudo nano /etc/rc.local
+
+1.7 - Vá até o fim do arquivo, e na linha acima do texto "exit 0", insira o seguinte
+
+      /home/pi/Desktop/start_NPM.sh
+
+**Isto irá fazer com que o script inicie junto com o sistema
+
+1.8 - salve e feche o arquivo (ctrl + x / y)
