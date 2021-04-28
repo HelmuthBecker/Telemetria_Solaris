@@ -124,6 +124,9 @@ no-poll   #Bloqueia o dnsmasq de pesquisar no arquivo poll.conf
 
 server=8.8.8.8 #Servidor DNS consultado caso o cache local não conheça o domínio solicitado. Para cadastrar outro servidor basta adicionar outra linha.
 
+dhcp-host=24:0a:c4:ee:f7:a8, 192.168.5.17	#atribui endereço ip estatico ao MAC informado
+dhcp-host=24:0a:c4:ed:c7:80, 192.168.5.16	#atribui endereço ip estatico ao MAC informado
+
 pressione ctrl+x, y(yes), enter, para salvar e sair
 
 3.3 - Reinicie o DNSMASQ para aplicar as alterações (sudo /etc/init.d/dnsmasq restart)
