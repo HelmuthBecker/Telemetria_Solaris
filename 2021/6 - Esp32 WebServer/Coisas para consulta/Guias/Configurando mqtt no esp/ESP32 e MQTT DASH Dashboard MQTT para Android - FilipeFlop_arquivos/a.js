@@ -1,0 +1,1 @@
+var js_global = {clearsale_total_ajax_nonce : 'c42770a815',xhr_url : 'https://www.filipeflop.com/wp-admin/admin-ajax.php'};

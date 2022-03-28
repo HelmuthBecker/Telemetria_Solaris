@@ -1,0 +1,56 @@
+SERVIDORES
+A
+
+modo bridge
+ap+wds
+11n (5ghz)
+Dhcp ON
+ip - 192.168.0.1
+MAC WIRELESS 00:0c:43:c0:f9:ae
+ssid PROSERVER A
+SEM SENHA
+Canal 60
+B - MAC WDS - 000c43c06106			   *MAC DA INTERFACE WIFI
+D - MAC WDS - 000c43be43de (reserva)   *MAC DA INTERFACE WIFI
+
+C (Reserva)
+
+modo bridge
+ap+wds
+11n (5ghz)
+Dhcp ON
+ip - 192.168.1.1
+MAC WIRELESS 00:0c:43:be:d9:56
+ssid PROSERVER C
+SEM SENHA
+Canal 60
+B - MAC WDS - 000c43c06106			   *MAC DA INTERFACE WIFI
+D - MAC WDS - 000c43be43de (reserva)   *MAC DA INTERFACE WIFI
+
+CLIENTES
+
+B
+
+Modo Bridge
+ap+wds
+DHCP OFF
+ip - 192.168.1.2
+MAC WIRELESS 00:0C:43:C0:61:06
+ssid PROCLIENT B
+SEM SENHA
+Canal 60
+A - MAC WDS - 000c43c0f9ae				   *MAC DA INTERFACE WIFI
+C - MAC WDS - 000c43bed956 (reserva)	   *MAC DA INTERFACE WIFI
+
+D (Reserva)
+
+Modo Bridge
+ap+wds
+DHCP OFF
+ip - 192.168.0.3
+MAC WIRELESS 00:0c:43:be:43:de
+ssid PROCLIENT D
+SEM SENHA
+Canal 60
+A - MAC WDS - 000c43c0f9ae				   *MAC DA INTERFACE WIFI
+C - MAC WDS - 000c43bed956 (reserva)	   *MAC DA INTERFACE WIFI

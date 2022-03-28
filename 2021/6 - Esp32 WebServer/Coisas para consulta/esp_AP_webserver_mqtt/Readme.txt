@@ -1,0 +1,1 @@
+Scketch que configura o esp32 como webserver para responder as requisições HTTP,  e como publisher mqtt para transmitir dados a estação em terra.

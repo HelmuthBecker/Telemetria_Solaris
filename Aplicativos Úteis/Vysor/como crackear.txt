@@ -1,0 +1,20 @@
+substituir o arquivo uglify.js na pasta:
+C:\Users\Usuario\AppData\Local\Vysor\app-2.2.2
+
+ou
+
+editar o arquivo da seguinte forma:
+
+abra o arquivo original na pasta
+procure no arquivo por account
+ substitua
+
+ g=!0,b=!0
+
+ por
+
+ g=!1,b=!1
+
+ salve e feche o arquivo.
+
+ pronto

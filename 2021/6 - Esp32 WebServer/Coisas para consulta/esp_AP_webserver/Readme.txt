@@ -1,0 +1,1 @@
+Scketch que configura o esp32 em webserver para responder as requisições HTTP,  e Acessa Point para fornecer e gerenciar conexões wifi
